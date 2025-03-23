@@ -1,15 +1,15 @@
 // src/stores/map.ts
 import { defineStore } from 'pinia';
 import { shallowRef, ref } from 'vue';
+import L from 'leaflet';
 import type { Map, FeatureGroup, Control } from 'leaflet';
-import type { Coords } from '@/common/composables/useMap';
+import type { Coords } from '@/common/components/map';
 
 
 interface Marker {
   id: number
   lat: number
   lng: number
-  name: string 
 }
 
 export const useMapStore = defineStore('map', () => {
@@ -17,7 +17,7 @@ export const useMapStore = defineStore('map', () => {
   const map = shallowRef<Map>();
   const drawLayer = shallowRef<FeatureGroup>();
   const drawControl = shallowRef<Control.Draw>();
-  const routes = shallowRef<Routing.Control[]>([]);
+  const route = shallowRef<L.Routing.Control | null>(null);
 
   // Данные маркеров и маршрутов
   const markers = ref<Marker[]>([]);
@@ -30,7 +30,11 @@ export const useMapStore = defineStore('map', () => {
   // Действия
   const setMap = (newMap: Map) => map.value = newMap;
   const setDrawLayer = (layer: FeatureGroup) => drawLayer.value = layer;
-  const clearRoutes = () => routes.value = []
+  const setRoute = (value:  L.Routing.Control) => route.value = value
+  const clearRoute = () => {
+    route.value?.remove()
+    route.value = null
+  }
   const setDrawControl = (control: Control.Draw) => drawControl.value = control;
   const addMarker = (markerData: Marker) => {
     if (markers.value.findIndex(m => m.id === markerData.id) === -1) {
@@ -56,9 +60,10 @@ export const useMapStore = defineStore('map', () => {
     searchQuery,
     searchResults,
     selectedArea,
-    routes,
+    route,
     addMarker,
-    clearRoutes,
+    setRoute,
+    clearRoute,
     changeMarker,
     setMap,
     setDrawLayer,

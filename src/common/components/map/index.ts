@@ -7,6 +7,7 @@ import 'leaflet-draw/dist/leaflet.draw.css';
 import 'leaflet-draw';
 import { debounce } from '@/common/utils/functions';
 import { useMapStore } from '@/common/stores/map';
+import {updateRoute} from './routes'
 
 // Константы
 const NOMINATIM_SEARCH_URL = 'https://nominatim.openstreetmap.org/search?format=json&q=';
@@ -72,11 +73,7 @@ export function useMap(container: Ref<HTMLElement | null>) {
         lat: item.lat,
         lng: item.lng
       })
-    });
-
-    if (store.markers.length > 1) {
-      updateRoutes();
-    }
+    })
   }
 
   // Инициализация карты
@@ -130,16 +127,15 @@ export function useMap(container: Ref<HTMLElement | null>) {
     }
   };
 
-  // Поиск с debounce
   const searchLocation = async () => {
     if (store.searchQuery.length > 2) {
-      store.searchResults = await searchLocationByValue(store.searchQuery);
+      store.searchResults = await searchLocationByValue(store.searchQuery)
     } else {
-      store.searchResults = [];
+      store.searchResults = []
     }
   };
 
-  const debouncedSearchLocation = debounce(searchLocation, 300);
+  const debouncedSearchLocation = debounce(searchLocation, 300)
 
   // Выбор области
   const selectArea = (area: { name: string; lat: number; lng: number }) => {
@@ -150,78 +146,32 @@ export function useMap(container: Ref<HTMLElement | null>) {
     store.searchResults = [];
   };
 
-  // Обновление маршрутов
-  const updateRoutes = () => {
-    // Удаляем старые маршруты
-    store.routes.forEach(route => route.remove());
-    store.clearRoutes()
-
-    if (!store.map || store.markers.length < 2) return
-
-    const waypoints = store.markers.map(m => L.latLng(m.lat, m.lng));
-    
-    const route = L.Routing.control({
-      waypoints,
-      router: L.Routing.osrmv1({
-        serviceUrl: 'https://router.project-osrm.org/route/v1'
-      }),
-      routeWhileDragging: true,
-      show: false,
-      createMarker: () => null,
-      useZoomParameter: true,
-      fitSelectedRoutes: false,
-      lineOptions: {
-        addWaypoints: false,
-        missingRouteTolerance: 0
-      }
-    }).addTo(store.map);
-
-    const routeContainer = route.getContainer();
-    if (routeContainer) {
-      routeContainer.remove();
-    }
-
-    store.routes.push(route);
-  };
-
   const createMarkerElement = ({lat, lng} : Coords) => {
     return L.marker([lat, lng], { 
       draggable: true,
       riseOnHover: true 
-    }).addTo(store.map!).bindPopup('Новый маркер').openPopup();
+    }).addTo(store.map!).openPopup();
   };
 
   const createMarker = ({lat, lng} : Coords) => {
     if (store.map) {
-      // Создаем маркер по переданным координатам
       const marker = createMarkerElement({lat, lng})
-  
-      const markerData = {
-        id: markerId++,
-        lat,
-        lng,
-        name: 'Новый маркер'
-      };
-  
+      const markerData = {id: markerId++, lat, lng, };
       store.addMarker(markerData)
   
       // Обработчик перемещения маркера
       marker.on('dragend', (event: L.LeafletEvent) => {
         const updatedMarker = event.target as L.Marker;
         const newPosition = updatedMarker.getLatLng();
-        
-        // Обновляем координаты в хранилище
+
         store.changeMarker(markerData, {lat: newPosition.lat, lng: newPosition.lng})
-  
-        // Обновляем маршруты
-        updateRoutes();
-  
-        // Плавное перемещение карты к новой позиции
+
+        updateRoute();
+
         store.map?.panTo(newPosition, { animate: true, duration: 0.5 });
       });
-  
-      // Обновляем маршруты если нужно
-      updateRoutes();
+
+      updateRoute();
     }
   }
 
