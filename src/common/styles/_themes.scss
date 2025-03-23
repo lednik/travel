@@ -1,0 +1,20 @@
+@use 'sass:map';
+@use 'variables' as *;
+
+// Светлая тема (по умолчанию)
+:root, .theme--light {
+  @each $group, $themes in $groups {
+    @each $key, $value in map.get($themes, "light") {
+      --#{$group}-#{$key}: #{$value};
+    }
+  }
+}
+
+// Тёмная тема
+.theme--dark {
+  @each $group, $themes in $groups {
+    @each $key, $value in map.get($themes, "dark") {
+      --#{$group}-#{$key}: #{$value};
+    }
+  }
+}

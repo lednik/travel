@@ -1,0 +1,93 @@
+$groups: (
+  // Цвета
+  "bg": (
+    "light": (
+      "base": #ffffff,
+      "secondary": #f5f5f5,
+      "tertiary": #eeeeee,
+      "inverse": #121212
+    ),
+    "dark": (
+      "base": #121212,
+      "secondary": #1e1e1e,
+      "tertiary": #2c2c2c,
+      "inverse": #ffffff
+    )
+  ),
+
+  // Текст
+  "text": (
+    "light": (
+      "primary": #212121,
+      "secondary": #424242,
+      "tertiary": #616161,
+      "inverse": #ffffff
+    ),
+    "dark": (
+      "primary": #ffffff,
+      "secondary": #e0e0e0,
+      "tertiary": #bdbdbd,
+      "inverse": #212121
+    )
+  ),
+
+  // Шрифты
+  "font": (
+    "light": (
+      "size-xs": 12px,
+      "size-sm": 14px,
+      "size-base": 16px,
+      "size-lg": 20px,
+      "size-xl": 24px,
+      "weight-light": 300,
+      "weight-regular": 400,
+      "weight-medium": 500,
+      "weight-bold": 700
+    ),
+    "dark": (
+      "size-xs": 12px,
+      "size-sm": 14px,
+      "size-base": 16px,
+      "size-lg": 20px,
+      "size-xl": 24px,
+      "weight-light": 300,
+      "weight-regular": 400,
+      "weight-medium": 500,
+      "weight-bold": 700
+    )
+  ),
+
+  // Радиусы
+  "radius": (
+    "light": (
+      "sm": 4px,
+      "md": 8px,
+      "lg": 16px,
+      "full": 9999px
+    ),
+    "dark": (
+      "sm": 4px,
+      "md": 8px,
+      "lg": 16px,
+      "full": 9999px
+    )
+  ),
+
+  // Отступы
+  "spacing": (
+    "light": (
+      "xs": 4px,
+      "sm": 8px,
+      "md": 16px,
+      "lg": 24px,
+      "xl": 32px
+    ),
+    "dark": (
+      "xs": 4px,
+      "sm": 8px,
+      "md": 16px,
+      "lg": 24px,
+      "xl": 32px
+    )
+  )
+);

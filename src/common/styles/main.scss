@@ -1,0 +1,8 @@
+@use 'sass:map';
+@use 'variables';
+@use 'themes';
+
+// Функция для доступа к переменным
+@function use-variable($group, $key) {
+  @return var(--#{$group}-#{$key});
+}

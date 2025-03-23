@@ -1,0 +1,51 @@
+{
+  "compilerOptions": {
+    "target": "ESNext", // Современный стандарт ES
+    "module": "ESNext", // Используем ES-модули
+    "baseUrl": "./src", // Базовый путь для разрешения модулей
+    "paths": { // Алиасы путей
+      "@/*": [
+        "./*"
+      ],
+      "@web/*": [
+        "./src/web/*"
+      ],
+      "@pwa/*": [
+        "./src/pwa/*"
+      ]
+    },
+    "types": [ // Глобальные типы
+      "vite/client", // Типы Vite
+      "vue", // Типы Vue
+      "node" // Типы Node.js
+    ],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ],
+    "strict": true, // Строгая проверка типов
+    "noImplicitAny": true,
+    "moduleResolution": "Node", // Алгоритм разрешения модулей
+    "esModuleInterop": true, // Совместимость CommonJS/ES
+    "skipLibCheck": true, // Пропуск проверки типов библиотек
+    "forceConsistentCasingInFileNames": true, // Чувствительность к регистру
+    "resolveJsonModule": true, // Импорт JSON-файлов
+    "allowJs": true, // Разрешить JS-файлы
+    "jsx": "preserve", // Обработка JSX (если используется)
+    "lib": [
+      "ESNext",
+      "DOM"
+    ], // Используемые стандартные библиотеки
+    "isolatedModules": true // Безопасность для транспиляции
+  },
+  "include": [ // Какие файлы обрабатывать
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.vue",
+    "env.d.ts"
+  ],
+  "exclude": [ // Исключения
+    "node_modules",
+    "dist"
+  ]
+}

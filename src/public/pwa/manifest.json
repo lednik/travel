@@ -1,0 +1,14 @@
+{
+    "name": "Travel PWA",
+    "short_name": "TravelPWA",
+    "start_url": "/pwa/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "icons": [
+        {
+            "src": "icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        }
+    ]
+}
