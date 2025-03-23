@@ -19,24 +19,48 @@ export function useMap(container: Ref<HTMLElement | null>) {
   const store = useMapStore();
   let markerId = 0;
 
-  // Инициализация карты
-  const initializeMap = () => {
-    if (container.value && !store.map) {
-      const newMap = L.map(container.value, {
+  const createMap = () => {
+    if (container.value) {
+      const map = L.map(container.value, {
         zoomControl: false, // Отключаем стандартный контрол зума
         preferCanvas: true // Улучшаем производительность
       }).setView(INITIAL_VIEW, INITIAL_ZOOM);
-      L.tileLayer(TILE_LAYER_URL, { attribution: TILE_LAYER_ATTRIBUTION }).addTo(newMap);
+      L.tileLayer(TILE_LAYER_URL, { attribution: TILE_LAYER_ATTRIBUTION }).addTo(map);
       
-      store.setMap(newMap);
+      store.setMap(map);
       initializeDrawLayer();
-      newMap.invalidateSize();
+      map.invalidateSize();
+
+      if (store.markers.length > 1) {
+        updateRoutes();
+      }
 
       // Обработчик изменения размера окна
       window.addEventListener('resize', () => {
-        newMap.invalidateSize();
+        map.invalidateSize();
       });
     }
+  }
+
+  const restoreMap = () => {
+    if (!container.value || !store.map) return
+    createMap()
+
+    store.markers.forEach(item => {
+      createMarker({
+        lat: item.lat,
+        lng: item.lng
+      })
+    });
+  }
+
+  // Инициализация карты
+  const initializeMap = () => {
+    if (!store.map) {
+      createMap()
+      return
+    }
+    restoreMap()
   };
 
   // Инициализация слоя для рисования
@@ -135,51 +159,63 @@ export function useMap(container: Ref<HTMLElement | null>) {
     }
   };
 
+  const createMarker = ({lat, lng} : {lat: number, lng: number}) => {
+    if (store.map) {
+      // Создаем маркер по переданным координатам
+      const marker = L.marker([lat, lng], {
+        draggable: true,
+        riseOnHover: true
+      })
+      marker.addTo(store.map);
+      marker.bindPopup('Новый маркер').openPopup();
+  
+      const markerData = {
+        id: markerId++,
+        lat,
+        lng,
+        name: 'Новый маркер'
+      };
+  
+      if (store.markers.findIndex(m => m.id === markerData.id) === -1) {
+        store.markers.push(markerData);
+      }
+  
+      // Обработчик перемещения маркера
+      marker.on('dragend', (event: L.LeafletEvent) => {
+        const updatedMarker = event.target as L.Marker;
+        const newPosition = updatedMarker.getLatLng();
+        
+        // Обновляем координаты в хранилище
+        const index = store.markers.findIndex(m => m.id === markerData.id);
+        if (index !== -1) {
+          store.markers[index] = {
+            ...store.markers[index],
+            lat: newPosition.lat,
+            lng: newPosition.lng
+          };
+        }
+  
+        // Обновляем маршруты
+        if (store.markers.length > 1) {
+          updateRoutes();
+        }
+  
+        // Плавное перемещение карты к новой позиции
+        store.map?.panTo(newPosition, { animate: true, duration: 0.5 });
+      });
+  
+      // Обновляем маршруты если нужно
+      if (store.markers.length > 1) {
+        updateRoutes();
+      }
+    }
+  }
+
   // Добавление маркера
   const addMarker = () => {
     if (store.map) {
       const center = store.map.getCenter();
-      const marker = L.marker([center.lat, center.lng], {
-        draggable: true,
-        riseOnHover: true
-      }).addTo(store.map);
-
-      const markerData = {
-        id: markerId++,
-        lat: center.lat,
-        lng: center.lng,
-        name: 'Новый маркер'
-      };
-
-      marker.bindPopup('Новый маркер').openPopup();
-      store.markers.push(markerData);
-
-      marker.on('dragend', (event: L.LeafletEvent) => {
-        const marker = event.target as L.Marker;
-        const position = marker.getLatLng();
-        const index = store.markers.findIndex(m => m.id === markerData.id);
-        
-        if (index !== -1) {
-          store.markers[index] = { 
-            ...store.markers[index], 
-            lat: position.lat, 
-            lng: position.lng 
-          };
-        }
-
-        if (store.map) {
-          store.map.panTo(position);
-          store.map.invalidateSize();
-        }
-
-        if (store.markers.length > 1) {
-          updateRoutes();
-        }
-      });
-
-      if (store.markers.length > 1) {
-        updateRoutes();
-      }
+      createMarker({lat: center.lat, lng: center.lng})
     }
   };
 

@@ -22,13 +22,17 @@ export const useMapStore = defineStore('map', () => {
   const setMap = (newMap: Map) => map.value = newMap;
   const setDrawLayer = (layer: FeatureGroup) => drawLayer.value = layer;
   const setDrawControl = (control: Control.Draw) => drawControl.value = control;
+  const clearMarkers = () => markers.value = []
+  const clearRoutes = () => routes.value = []
 
   return {
     map,
     drawLayer,
     drawControl,
     markers,
+    clearMarkers,
     routes,
+    clearRoutes,
     searchQuery,
     searchResults,
     selectedArea,
