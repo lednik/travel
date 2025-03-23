@@ -43,7 +43,6 @@
 
 
     const {
-        map,
         searchQuery,
         searchResults,
         debouncedSearchLocation,
