@@ -1,4 +1,4 @@
-import { ref, onMounted, Ref } from 'vue';
+import { ref, onMounted, Ref, shallowRef } from 'vue';
 import L from 'leaflet';
 import 'leaflet-routing-machine';
 import 'leaflet/dist/leaflet.css';
@@ -40,7 +40,7 @@ const NOMINATIM_SEARCH_URL = 'https://nominatim.openstreetmap.org/search?format=
 
 export function useMap(container: Ref<HTMLElement | null>) {
   // Реактивные переменные
-  const map = ref<L.Map | null>(null);
+  const map = shallowRef<L.Map>();
   const drawLayer = ref<L.FeatureGroup | null>(null);
   const drawControl = ref<L.Control.Draw | null>(null);
   const selectedArea = ref<{ name: string; lat: number; lng: number } | null>(null);
@@ -137,6 +137,7 @@ export function useMap(container: Ref<HTMLElement | null>) {
           useZoomParameter: true,
           routeWhileDragging: true,
           show: false, // Скрыть панель маршрута
+          fitSelectedRoutes: false,
         }).addTo(map.value);
 
         const routeContainer = route.getContainer();
@@ -153,10 +154,23 @@ export function useMap(container: Ref<HTMLElement | null>) {
   const addMarker = () => {
     if (map.value) {
       const center = map.value.getCenter();
-      const marker = L.marker([center.lat, center.lng], { draggable: true }).addTo(map.value);
-      const markerData = { id: markerId++, lat: center.lat, lng: center.lng, name: 'Новый маркер' };
+      const marker = L.marker([center.lat, center.lng], {
+        draggable: true,
+        riseOnHover: true
+      })
 
+      marker.addTo(map.value)
+
+      const markerData = {
+        id: markerId++,
+        lat: center.lat,
+        lng: center.lng,
+        name: 'Новый маркер'
+      };
+
+      marker.options.title = `marker-${markerData.id}`
       marker.bindPopup('Новый маркер').openPopup();
+
       markers.value.push(markerData);
 
       if (markers.value.length > 1) {
@@ -164,9 +178,11 @@ export function useMap(container: Ref<HTMLElement | null>) {
       }
 
       marker.on('dragend', (event: L.LeafletEvent) => {
-        const marker = event.target as L.Marker;
+        const marker: L.Marker = event.target
         const position = marker.getLatLng();
+
         const markerIndex = markers.value.findIndex((item) => item.id === markerData.id);
+
         if (markerIndex !== -1) {
           markers.value.splice(markerIndex, 1, { ...markerData, lat: position.lat, lng: position.lng });
         }
@@ -189,10 +205,21 @@ export function useMap(container: Ref<HTMLElement | null>) {
   };
 
   // Инициализация при монтировании
-  onMounted(initializeMap);
+  onMounted(() => {
+    initializeMap();
+    window.addEventListener('resize', () => {
+      if (map.value) {
+        map.value.invalidateSize();
+      }
+    });
+    if (map.value) {
+      map.value.on('zoomend', () => {
+        console.log('Карта увеличена/уменьшена');
+      });
+    }
+  });
 
   return {
-    map,
     drawLayer,
     drawControl,
     selectedArea,

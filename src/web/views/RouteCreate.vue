@@ -55,6 +55,9 @@
 </script>
   
   <style scoped lang="scss">
+  .leaflet-marker-icon {
+    position: absolute;
+  }
   .route-create {
     display: flex;
     height: 100vh;
