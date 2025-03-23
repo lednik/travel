@@ -1,0 +1,13 @@
+@use 'main' as *;
+body {
+    margin: 0;
+}
+
+* {
+    color: use-variable("text", "primary");
+}
+
+input {
+    outline: none;
+    color: use-variable("text", "inverse");
+}

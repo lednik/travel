@@ -1,7 +1,8 @@
 <template>
     <div class="app-container">
-      <nav v-if="$route.name !== 'home'">
+      <nav>
         <router-link to="/">Home</router-link>
+        <router-link to="/route-create">Create route</router-link>
       </nav>
       <router-view />
     </div>
@@ -20,13 +21,13 @@ onMounted(() => {
   
 <style scoped lang="scss">
 .app-container {
-  max-width: 1200px;
   margin: 0 auto;
   padding: use-variable("spacing", "md");
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   gap: use-variable("spacing", "md");
+  background-color: use-variable("bg", "tertiary");
 }
 
 nav {
@@ -34,6 +35,8 @@ nav {
   padding: use-variable("spacing", "md");
   border-radius: use-variable("radius", "md");
   box-shadow: use-variable("shadow", "sm");
+  display: flex;
+  gap: use-variable("spacing", "md");
 
   a {
     color: use-variable("text", "primary");
