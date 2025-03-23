@@ -37,7 +37,7 @@
   
 <script setup lang="ts">
     import {ref} from 'vue'
-    import {useMap} from '@/composables/useMap'
+    import {useMap} from '@/common/composables/useMap'
 
     const mapContainer = ref<HTMLElement | null>(null)
 

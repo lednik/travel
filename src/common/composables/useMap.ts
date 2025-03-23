@@ -9,11 +9,37 @@ import { debounce } from '@/common/utils/functions';
 import { useMapStore } from '@/common/stores/map';
 
 // Константы
-const INITIAL_VIEW = [55.7558, 37.6176] as [number, number];
-const INITIAL_ZOOM = 10;
-const TILE_LAYER_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const TILE_LAYER_ATTRIBUTION = '© OpenStreetMap contributors';
 const NOMINATIM_SEARCH_URL = 'https://nominatim.openstreetmap.org/search?format=json&q=';
+
+export interface Coords {
+  lat: number
+  lng: number
+}
+
+const MAP_CONFIG = {
+  options: {
+    zoomControl: false, // Отключаем стандартный контрол зума
+    preferCanvas: true // Улучшаем производительность
+  },
+  initialView: [55.7558, 37.6176] as [number, number],
+  initialZoom: 10,
+  tileLayer: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors'
+  },
+  routing: {
+    serviceUrl: 'https://router.project-osrm.org/route/v1',
+    routingOptions: {
+      routeWhileDragging: true,
+      show: false,
+      fitSelectedRoutes: false,
+      lineOptions: {
+        addWaypoints: false,
+        missingRouteTolerance: 0
+      }
+    }
+  }
+};
 
 export function useMap(container: Ref<HTMLElement | null>) {
   const store = useMapStore();
@@ -21,19 +47,14 @@ export function useMap(container: Ref<HTMLElement | null>) {
 
   const createMap = () => {
     if (container.value) {
-      const map = L.map(container.value, {
-        zoomControl: false, // Отключаем стандартный контрол зума
-        preferCanvas: true // Улучшаем производительность
-      }).setView(INITIAL_VIEW, INITIAL_ZOOM);
-      L.tileLayer(TILE_LAYER_URL, { attribution: TILE_LAYER_ATTRIBUTION }).addTo(map);
-      
+      const map = L.map(container.value, MAP_CONFIG.options)
+        .setView(MAP_CONFIG.initialView, MAP_CONFIG.initialZoom);
       store.setMap(map);
+
+      L.tileLayer(MAP_CONFIG.tileLayer.url, {attribution: MAP_CONFIG.tileLayer.attribution}).addTo(map);
+      
       initializeDrawLayer();
       map.invalidateSize();
-
-      if (store.markers.length > 1) {
-        updateRoutes();
-      }
 
       // Обработчик изменения размера окна
       window.addEventListener('resize', () => {
@@ -52,6 +73,10 @@ export function useMap(container: Ref<HTMLElement | null>) {
         lng: item.lng
       })
     });
+
+    if (store.markers.length > 1) {
+      updateRoutes();
+    }
   }
 
   // Инициализация карты
@@ -120,7 +145,7 @@ export function useMap(container: Ref<HTMLElement | null>) {
   const selectArea = (area: { name: string; lat: number; lng: number }) => {
     store.selectedArea = area;
     if (store.map) {
-      store.map.setView([area.lat, area.lng], INITIAL_ZOOM);
+      store.map.setView([area.lat, area.lng], MAP_CONFIG.initialZoom);
     }
     store.searchResults = [];
   };
@@ -129,45 +154,47 @@ export function useMap(container: Ref<HTMLElement | null>) {
   const updateRoutes = () => {
     // Удаляем старые маршруты
     store.routes.forEach(route => route.remove());
-    store.routes = [];
+    store.clearRoutes()
 
-    if (store.map && store.markers.length > 1) {
-      const waypoints = store.markers.map(m => L.latLng(m.lat, m.lng));
-      
-      const route = L.Routing.control({
-        waypoints,
-        router: L.Routing.osrmv1({
-          serviceUrl: 'https://router.project-osrm.org/route/v1'
-        }),
-        routeWhileDragging: true,
-        show: false,
-        createMarker: () => null,
-        useZoomParameter: true,
-        fitSelectedRoutes: false,
-        lineOptions: {
-          addWaypoints: false,
-          missingRouteTolerance: 0
-        }
-      }).addTo(store.map);
+    if (!store.map || store.markers.length < 2) return
 
-      const routeContainer = route.getContainer();
-      if (routeContainer) {
-        routeContainer.remove();
+    const waypoints = store.markers.map(m => L.latLng(m.lat, m.lng));
+    
+    const route = L.Routing.control({
+      waypoints,
+      router: L.Routing.osrmv1({
+        serviceUrl: 'https://router.project-osrm.org/route/v1'
+      }),
+      routeWhileDragging: true,
+      show: false,
+      createMarker: () => null,
+      useZoomParameter: true,
+      fitSelectedRoutes: false,
+      lineOptions: {
+        addWaypoints: false,
+        missingRouteTolerance: 0
       }
+    }).addTo(store.map);
 
-      store.routes.push(route);
+    const routeContainer = route.getContainer();
+    if (routeContainer) {
+      routeContainer.remove();
     }
+
+    store.routes.push(route);
   };
 
-  const createMarker = ({lat, lng} : {lat: number, lng: number}) => {
+  const createMarkerElement = ({lat, lng} : Coords) => {
+    return L.marker([lat, lng], { 
+      draggable: true,
+      riseOnHover: true 
+    }).addTo(store.map!).bindPopup('Новый маркер').openPopup();
+  };
+
+  const createMarker = ({lat, lng} : Coords) => {
     if (store.map) {
       // Создаем маркер по переданным координатам
-      const marker = L.marker([lat, lng], {
-        draggable: true,
-        riseOnHover: true
-      })
-      marker.addTo(store.map);
-      marker.bindPopup('Новый маркер').openPopup();
+      const marker = createMarkerElement({lat, lng})
   
       const markerData = {
         id: markerId++,
@@ -176,9 +203,7 @@ export function useMap(container: Ref<HTMLElement | null>) {
         name: 'Новый маркер'
       };
   
-      if (store.markers.findIndex(m => m.id === markerData.id) === -1) {
-        store.markers.push(markerData);
-      }
+      store.addMarker(markerData)
   
       // Обработчик перемещения маркера
       marker.on('dragend', (event: L.LeafletEvent) => {
@@ -186,28 +211,17 @@ export function useMap(container: Ref<HTMLElement | null>) {
         const newPosition = updatedMarker.getLatLng();
         
         // Обновляем координаты в хранилище
-        const index = store.markers.findIndex(m => m.id === markerData.id);
-        if (index !== -1) {
-          store.markers[index] = {
-            ...store.markers[index],
-            lat: newPosition.lat,
-            lng: newPosition.lng
-          };
-        }
+        store.changeMarker(markerData, {lat: newPosition.lat, lng: newPosition.lng})
   
         // Обновляем маршруты
-        if (store.markers.length > 1) {
-          updateRoutes();
-        }
+        updateRoutes();
   
         // Плавное перемещение карты к новой позиции
         store.map?.panTo(newPosition, { animate: true, duration: 0.5 });
       });
   
       // Обновляем маршруты если нужно
-      if (store.markers.length > 1) {
-        updateRoutes();
-      }
+      updateRoutes();
     }
   }
 
